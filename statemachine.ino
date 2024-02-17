@@ -78,6 +78,7 @@ void HoveringState::reset() {
 
 void HoveringState::loop_state(DronePosition *d, float dt) {
   // float distance = ps1->getDistance()[0];
+  // Serial.println(distance);
   // if (distance && distance < 20) {
   //   if (changing_state_counter > 2) {
   //     this->reset();

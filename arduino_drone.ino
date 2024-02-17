@@ -3,13 +3,19 @@
 #include "gyro.h"
 #include "motors.h"
 #include "statemachine.h"
+#include "utils.h"
 
-#define TEST_MOTORS 0
+#define RUN_DRONE 0
+#define TEST_MOTORS_SERIAL 1
+#define TEST_MOTORS_PROXIMITY_SENSOR 2
+#define CALIBRATE 3
+
+#define RUNNING_PROGRAM 2
 
 Motors* motors;
 Gyro* g;
-ProximitySensor* ps1;
 StateMachine* sm;
+ProximitySensor *ps1;
 bool calibrating = true;
 int read = 0;
 float currentTime, lastTime = 0;
@@ -34,17 +40,35 @@ void testMotors() {
       motors->writeAll(0);
     }
     lastRead = distance;
-    // motors->writeAll(180);
-    // delay(3);
-    // motors->writeAll(0);
-    // delay(2);
-    // motors->writeAll(20);
-    // delay(2);
-    // motors->writeAll(0);
-    // delay(9999);
+}
+
+void testMotorsProximitySensor(float dt) {
+    float distance = ps1->getLowPassFilteredDistance()[0];
+    float intensity = constrain(map(distance, 20, 45, 0, 100), 0, 100);
+    Serial.println(String(distance) + " " + String(intensity));
+    motors->writeAll(intensity);
+}
+
+void runDrone(float dt) {
+  if (!g->updateData(dt)) {
+    if (!printCalibrate) {
+      Serial.println("calibrating");
+      printCalibrate = true;
+    }
+
+    if ((micros() - currentTime)/ 1000000.0 > 2) {
+      currentTime = micros();
+    }
+    // wait until calibrated
+    lastTime = currentTime;
+    return;
+  }
+
+  sm->run(dt);
 }
 
 void setup() {
+
   Serial.begin(9600);
   Serial.setTimeout(50);
 
@@ -59,34 +83,42 @@ void setup() {
   sm = new StateMachine(&d);
   ps1 = ProximitySensorSingleton::getProximitySensor();
 
+  // UNCONMMENT THIS TO RUN MOTOR CALIBRATION PROGRAN
+  // motors->writeAll(180);
+  // delay(10000);
+
+  
+  // motors->writeAll(0);
+  // delay(10000);
+
+  
+  // motors->writeAll(20);
+  // delay(2000);
+
+  // motors->writeAll(0);
+  // delay(999999);
+  // END IF THE MOTOR CALIBRATION PROGRAM
+
   motors->writeAll(0);
   delay(2000);
 }
 
 void loop() {
-  if (TEST_MOTORS) {
-    // testMotorsPrint();
-  } else {
-    currentTime = micros();
-    float dt = (currentTime - lastTime) / 1000000.0;
-
-    if (!g->updateData(dt)) {
-      if (!printCalibrate) {
-        Serial.println("calibrating");
-        printCalibrate = true;
-      }
-
-      if ((micros() - currentTime)/ 1000000.0 > 2) {
-        currentTime = micros();
-      }
-      // wait until calibrated
-      lastTime = currentTime;
-      return;
-    }
-
-    sm->run(dt);
-
-    lastTime = currentTime;
+  currentTime = micros();
+  float dt = (currentTime - lastTime) / 1000000.0;
+  // Serial.println("printing anything for a check");
+  // Serial.println(ps1->getDistance()[0]);
+  switch (RUNNING_PROGRAM) {
+    case RUN_DRONE:
+      runDrone(dt);
+      break;
+    case TEST_MOTORS_SERIAL:
+      // testMotorsPrint();
+      break;
+    case TEST_MOTORS_PROXIMITY_SENSOR:
+      testMotorsProximitySensor(dt);
+      break;
   }
+  lastTime = currentTime;
 
 }

@@ -3,7 +3,7 @@
 
 #define FRONT_SONAR_ECHO 10
 #define FRONT_SONAR_TRIG 9
-#define FRONT_SONAR_MAX_DISTANCE 40
+#define FRONT_SONAR_MAX_DISTANCE 50
 
 #include <NewPing.h>
 
@@ -12,8 +12,11 @@ class ProximitySensor {
     NewPing *front_sensor;
     void setup();
     float* getDistance();
+    float* getLowPassFilteredDistance();
   private:
-    float distance[1];
+    float rawDistance[1];
+    float filteredDistance[1];
+    float distance0, distance1, distance2, distanceFinal1, distanceFinal2;
 };
 
 class ProximitySensorSingleton {
