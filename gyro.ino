@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include "utils.h"
+#include "storage.h"
 
 #define LOW_PASS_SENSITIVITY 2
 const int MPU=0x68; 
@@ -13,7 +14,7 @@ Gyro::Gyro(bool shouldCalibrate = false) {
   this->shouldCalibrate = shouldCalibrate;
 }
 
-bool Gyro::updateData(float dt) {
+void Gyro::readRawValues() {
   Wire.beginTransmission(MPU);
   Wire.write(0x3B);  
   Wire.endTransmission(false);
@@ -26,25 +27,10 @@ bool Gyro::updateData(float dt) {
   rawGX = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroX
   rawGY = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroY
   rawGZ = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroZ
+}
 
-  // filteredAX = low_pass(2, dt, rawAX, rawAX1, rawAX2, aX1, aX2);
-  // rawAX2 = rawAX1; rawAX1 = rawAX; aX2 = aX1; aX1 = filteredAX;
-  // rawAX = filteredAX;
-
-  if (this->shouldCalibrate && this->currentRound < this->calibrationRounds) {
-    calibrationLedTime += dt;
-    if (calibrationLedTime > 1) {
-      calibrationIndication = !calibrationIndication;
-      calibrationLedTime = 0;
-      digitalWrite(9, calibrationIndication);
-    }
-    this->calibrate(
-      rawAX, rawAY, rawAZ, rawGX, rawGY, rawGZ,
-      this->currentRound == (this->calibrationRounds - 1)
-    );
-    this->currentRound ++;
-    return false;
-  }
+bool Gyro::updateData(float dt) {
+  this->readRawValues();
 
   aX = rawAX - this->aErrorX;
   aY = rawAY - this->aErrorY;
@@ -58,40 +44,34 @@ bool Gyro::updateData(float dt) {
   return true;
 }
 
-void Gyro::calibrate(
-  float saX,
-  float saY,
-  float saZ,
-  float sgX,
-  float sgY,
-  float sgZ,
-  bool lastSample = false
-) {
-    aErrorX += saX; 
-    aErrorY += saY; 
-    aErrorZ += saZ; 
-    gErrorX += sgX; 
-    gErrorY += sgY; 
-    gErrorZ += sgZ;
-    aAngleErrorX += atan(saY / sqrt(sq(saX) + sq(saZ)));
-    aAngleErrorY += atan(-1 * saX / sqrt(sq(saY) + sq(saZ)));
+bool Gyro::calibrate() {
+  this->readRawValues();
+  if (this->currentRound < this->calibrationRounds) {
+    aErrorX += rawAX;
+    aErrorY += rawAY;
+    aErrorZ += rawAZ;
+    gErrorX += rawGX;
+    gErrorY += rawGY;
+    gErrorZ += rawGZ;
+    Serial.println(currentRound);
+    this->currentRound ++;
+    return false;
+  } else {
+    gErrorX /= calibrationRounds;
+    gErrorY /= calibrationRounds;
+    gErrorZ /= calibrationRounds;
 
-    if (lastSample) {
-      gErrorX /= calibrationRounds;
-      gErrorY /= calibrationRounds;
-      gErrorZ /= calibrationRounds;
+    aErrorX /= calibrationRounds;
+    aErrorY /= calibrationRounds;
+    aErrorZ /= calibrationRounds;
 
-      aErrorX /= calibrationRounds;
-      aErrorY /= calibrationRounds;
-      aErrorZ /= calibrationRounds;
+    saveCalibration(gErrorX, gErrorY, gErrorZ, aErrorX, aErrorY);
+    return true;
+  }
+}
 
-      aAngleErrorX /= calibrationRounds;
-      aAngleErrorY /= calibrationRounds;
-      aAngleErrorZ /= calibrationRounds;
-
-      digitalWrite(9, 1);
-      delay(3000);
-    }
+void Gyro::readCalibration() {
+  loadCalibration(&gErrorX, &gErrorY, &gErrorZ, &aErrorX, &aErrorY);
 }
 
 void Gyro::setAngle(float dt) {

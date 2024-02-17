@@ -12,7 +12,7 @@ class ProximitySensor {
     NewPing *front_sensor;
     void setup();
     float* getDistance();
-    float* getLowPassFilteredDistance();
+    float* getLowPassFilteredDistance(float dt);
   private:
     float rawDistance[1];
     float filteredDistance[1];

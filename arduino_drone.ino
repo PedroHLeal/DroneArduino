@@ -10,7 +10,7 @@
 #define TEST_MOTORS_PROXIMITY_SENSOR 2
 #define CALIBRATE 3
 
-#define RUNNING_PROGRAM 2
+#define RUNNING_PROGRAM 0
 
 Motors* motors;
 Gyro* g;
@@ -19,10 +19,8 @@ ProximitySensor *ps1;
 bool calibrating = true;
 int read = 0;
 float currentTime, lastTime = 0;
+bool printCalibrate = true;
 DronePosition d;
-bool calibrationLight = false;
-bool printCalibrate = false;
-float lastRead = 0;
 
 void testMotorsPrint() {
   if (Serial.available() > 0) {
@@ -31,44 +29,30 @@ void testMotorsPrint() {
   }
 }
 
-void testMotors() {
-    float distance = ps1->getDistance()[0];
-    if (distance > 0 && lastRead > 0) {
-      Serial.println(map(distance, 40, 5, 0, 180));
-      motors->writeAll(map(distance, 40, 5, 0, 180));
-    } else {
-      motors->writeAll(0);
-    }
-    lastRead = distance;
-}
-
 void testMotorsProximitySensor(float dt) {
-    float distance = ps1->getLowPassFilteredDistance()[0];
+    float distance = ps1->getLowPassFilteredDistance(dt)[0];
     float intensity = constrain(map(distance, 20, 45, 0, 100), 0, 100);
     Serial.println(String(distance) + " " + String(intensity));
     motors->writeAll(intensity);
 }
 
 void runDrone(float dt) {
-  if (!g->updateData(dt)) {
-    if (!printCalibrate) {
-      Serial.println("calibrating");
-      printCalibrate = true;
-    }
-
-    if ((micros() - currentTime)/ 1000000.0 > 2) {
-      currentTime = micros();
-    }
-    // wait until calibrated
-    lastTime = currentTime;
-    return;
-  }
-
+  g->updateData(dt);
   sm->run(dt);
 }
 
-void setup() {
+void calibrate() {
+  while (!g->calibrate()) {
+    if (printCalibrate) {
+      Serial.println("Calibrating");
+      printCalibrate = false;
+    }
+  }
+  Serial.println("Calibrated");
+  delay(1000000);
+}
 
+void setup() {
   Serial.begin(9600);
   Serial.setTimeout(50);
 
@@ -106,8 +90,7 @@ void setup() {
 void loop() {
   currentTime = micros();
   float dt = (currentTime - lastTime) / 1000000.0;
-  // Serial.println("printing anything for a check");
-  // Serial.println(ps1->getDistance()[0]);
+  
   switch (RUNNING_PROGRAM) {
     case RUN_DRONE:
       runDrone(dt);
@@ -117,6 +100,9 @@ void loop() {
       break;
     case TEST_MOTORS_PROXIMITY_SENSOR:
       testMotorsProximitySensor(dt);
+      break;
+    case CALIBRATE:
+      calibrate();
       break;
   }
   lastTime = currentTime;

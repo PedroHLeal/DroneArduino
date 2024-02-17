@@ -4,6 +4,7 @@ StateMachine::StateMachine(DronePosition *d) {
   states[1] = new FindingPositionState();
   this->current_state = states[0];
   this->current_state->next_state = -1;
+  g->readCalibration();
 }
 
 void StateMachine::run(float dt) {
