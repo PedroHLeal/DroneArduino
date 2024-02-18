@@ -3,7 +3,7 @@
 
 #define FRONT_SONAR_ECHO 10
 #define FRONT_SONAR_TRIG 9
-#define FRONT_SONAR_MAX_DISTANCE 50
+#define FRONT_SONAR_MAX_DISTANCE 60
 
 #include <NewPing.h>
 
@@ -25,6 +25,7 @@ class ProximitySensorSingleton {
     static ProximitySensor* getProximitySensor() {
       if (p == NULL) {
         p = new ProximitySensor();
+        p->setup();
       }
       return p;
     }

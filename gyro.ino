@@ -72,6 +72,8 @@ bool Gyro::calibrate() {
 
 void Gyro::readCalibration() {
   loadCalibration(&gErrorX, &gErrorY, &gErrorZ, &aErrorX, &aErrorY);
+  // Serial.println(String(gErrorX) + " " + String(gErrorY) + " " + String(gErrorZ) + " " + String(aErrorX) + " " + String(aErrorY));
+  // delay(999999);
 }
 
 void Gyro::setAngle(float dt) {

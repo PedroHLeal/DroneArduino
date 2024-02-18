@@ -11,10 +11,12 @@
 #define POS_DIFF_INTENSITY 2
 #define VEL_DIFF_INTENSITY 18
 #define BIAS_CORRECTION_INTENSITY 0.06
-#define HOVER_BASIS_INTENSITY 95
+#define HOVER_BASIS_INTENSITY 40
 
 
 typedef struct {
+  bool is_on = false;
+
   float frontIntensity;
   float rearIntensity;
   float leftIntensity;
@@ -28,10 +30,10 @@ typedef struct {
   float targetAngVelPitch, targetAngVelRoll;
   float targetAngAccPitch, targetAngAccRoll;
   float biasCorrectionPitch = 0, biasCorrectionRoll = 0;
-
-  bool emergencyQuit = false;
-  float emergencyQuitTime = 0;
 } DronePosition;
+
+// -------------------------------------------
+// -------------------------------------------
 
 class State {
   public:
@@ -39,34 +41,31 @@ class State {
     Gyro *g;
     Motors* m;
     int next_state = 0;
-    void run(DronePosition *d, float dt);
-    virtual void reset() = 0;
-    virtual void loop_state(DronePosition *d, float dt) = 0;
+    virtual void run(DronePosition *d, float dt) = 0;
     State();
   protected:
-    void resetPosition(DronePosition *d);
+    void calculatePid(DronePosition *p, float dt);
+    void writeMotors(DronePosition *p);
 };
 
-class HoveringState : public State {
+class OffState : public State {
   public:
-    HoveringState();
-    void loop_state(DronePosition *d, float dt) override;
-    void reset() override;
+    OffState() : State() {}
+    void run(DronePosition *d, float dt);
   private:
-    float print_time = 0;
-    int state_led_value = 0;
-    float led_flicker_counter = 0;
-    float changing_state_counter = 0;
-    ProximitySensor *ps1;
+    float turningOnTime = 0;
 };
 
-class FindingPositionState : public State {
+class OnState : public State {
   public:
-    FindingPositionState();
-    float counter = 0;
-    void loop_state(DronePosition *d, float dt) override;
-    void reset() override;
+    OnState() : State() {}
+    void run(DronePosition *d, float dt);
+  private:
+    float turningOffTime = 0;
 };
+
+// STATE MACHINE ---------------------------------
+// -----------------------------------------------
 
 class StateMachine {
   private:

@@ -10,7 +10,7 @@
 #define TEST_MOTORS_PROXIMITY_SENSOR 2
 #define CALIBRATE 3
 
-#define RUNNING_PROGRAM 0
+#define RUNNING_PROGRAM 2
 
 Motors* motors;
 Gyro* g;
@@ -64,22 +64,37 @@ void setup() {
 
   motors = MotorsSingleton::getInstance();
   g = GyroSingleton::getGyro();
-  sm = new StateMachine(&d);
   ps1 = ProximitySensorSingleton::getProximitySensor();
+  if (RUNNING_PROGRAM == RUN_DRONE) {
+    sm = new StateMachine(&d);
+  }
 
-  // UNCONMMENT THIS TO RUN MOTOR CALIBRATION PROGRAN
+  // UNCONMMENT THIS TO RUN ESC CALIBRATION PROGRAN
   // motors->writeAll(180);
   // delay(10000);
-
   
   // motors->writeAll(0);
   // delay(10000);
-
   
-  // motors->writeAll(20);
+  // motors->writeFL(20);
+  // delay(2000);
+  // motors->writeFL(0);
   // delay(2000);
 
-  // motors->writeAll(0);
+  // motors->writeFR(20);
+  // delay(2000);
+  // motors->writeFR(0);
+  // delay(2000);
+
+  // motors->writeRL(20);
+  // delay(2000);
+  // motors->writeRL(0);
+  // delay(2000);
+
+  // motors->writeRR(20);
+  // delay(2000);
+  // motors->writeRR(0);
+  
   // delay(999999);
   // END IF THE MOTOR CALIBRATION PROGRAM
 
