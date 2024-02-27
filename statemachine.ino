@@ -32,13 +32,13 @@ void State::calculatePid(DronePosition *d, float dt) {
   d->biasCorrectionPitch += d->targetAngVelPitch * BIAS_CORRECTION_INTENSITY;
   d->biasCorrectionRoll += d->targetAngVelRoll * BIAS_CORRECTION_INTENSITY;
 
-  d->biasCorrectionPitch = constrain(d->biasCorrectionPitch, -120, 120);
-  d->biasCorrectionRoll = constrain(d->biasCorrectionRoll, -120, 120);
+  // d->biasCorrectionPitch = constrain(d->biasCorrectionPitch, -30, 30);
+  // d->biasCorrectionRoll = constrain(d->biasCorrectionRoll, -30, 30);
 
   d->targetAngAccPitch
-    = d->targetAngVelPitch - g->angularVelX * VEL_DIFF_INTENSITY + d->biasCorrectionPitch;
+    = constrain(d->targetAngVelPitch - g->angularVelX * VEL_DIFF_INTENSITY + d->biasCorrectionPitch, -15, 15);
   d->targetAngAccRoll
-    = d->targetAngVelRoll - g->angularVelY * VEL_DIFF_INTENSITY + d->biasCorrectionRoll;
+    = constrain(d->targetAngVelRoll - g->angularVelY * VEL_DIFF_INTENSITY + d->biasCorrectionRoll, -15, 15);
 
   d->frontIntensity = - d->targetAngAccPitch;
   d->rearIntensity = d->targetAngAccPitch;
@@ -47,16 +47,15 @@ void State::calculatePid(DronePosition *d, float dt) {
 }
 
 void State::writeMotors(DronePosition *d) {
-  d->FLIntensity = HOVER_BASIS_INTENSITY + d->leftIntensity + d->frontIntensity;
-  d->FRIntensity 
-    = HOVER_BASIS_INTENSITY + d->rightIntensity + d->frontIntensity;
-  d->RLIntensity = HOVER_BASIS_INTENSITY + d->leftIntensity + d->rearIntensity;
-  d->RRIntensity = HOVER_BASIS_INTENSITY + d->rightIntensity + d->rearIntensity;
+  d->FLIntensity = d->throttle + d->leftIntensity + d->frontIntensity;
+  d->FRIntensity = d->throttle + d->rightIntensity + d->frontIntensity;
+  d->RLIntensity = d->throttle + d->leftIntensity + d->rearIntensity;
+  d->RRIntensity = d->throttle + d->rightIntensity + d->rearIntensity;
 
-  m->writeFL(constrain(d->FLIntensity, 20, 145));
-  m->writeFR(constrain(d->FRIntensity, 20, 145));
-  m->writeRL(constrain(d->RLIntensity, 20, 145));
-  m->writeRR(constrain(d->RRIntensity, 20, 145));
+  m->writeFL(d->FLIntensity);
+  m->writeFR(d->FRIntensity);
+  m->writeRL(d->RLIntensity);
+  m->writeRR(d->RRIntensity);
 
   Serial.println(String(d->FLIntensity) + " " + String(d->FRIntensity) + " " + String(d->RLIntensity) + " " + String(d->RRIntensity));
 }
@@ -67,7 +66,7 @@ void State::writeMotors(DronePosition *d) {
 void OffState::run(DronePosition *d, float dt) {
   float distance = ps1->getLowPassFilteredDistance(dt)[0];
   Serial.println(distance);
-  if (distance > 0 && distance < 20) {
+  if (distance > 1 && distance < 20) {
     turningOnTime += dt;
   } else {
     turningOnTime = 0;
@@ -76,6 +75,7 @@ void OffState::run(DronePosition *d, float dt) {
   if (turningOnTime > 3) {
     next_state = 1;
     turningOnTime = 0;
+    d->throttle = 70;
   }
 }
 
@@ -84,7 +84,7 @@ void OffState::run(DronePosition *d, float dt) {
 
 void OnState::run(DronePosition *d, float dt) {
   float distance = ps1->getLowPassFilteredDistance(dt)[0];
-  if (distance > 0 && distance < 20) {
+  if (distance > 1 && distance < 20) {
     turningOffTime += dt;
   } else {
     turningOffTime = 0;
@@ -92,9 +92,20 @@ void OnState::run(DronePosition *d, float dt) {
 
   calculatePid(d, dt);
   writeMotors(d);
+  // emergencyQuitTime += dt;
+  takingOffTime += dt;
 
-  if (turningOffTime > 3) {
+  if (takingOffTime > 0.5) {
+    d->throttle = 70;
+  }
+
+  if (turningOffTime > 3 || emergencyQuitTime > 3) {
     next_state = 0;
     turningOffTime = 0;
+    motors->writeAll(0);
+    d->biasCorrectionPitch = 0;
+    d->biasCorrectionRoll = 0;
+    d->throttle = 0;
+    emergencyQuitTime = 0;
   }
 }

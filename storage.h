@@ -13,3 +13,5 @@ void loadCalibration(
   float *aErrorX,
   float *aErrorY
 );
+
+void showCalibrationValues();

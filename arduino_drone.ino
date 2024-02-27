@@ -4,13 +4,15 @@
 #include "motors.h"
 #include "statemachine.h"
 #include "utils.h"
+#include "storage.h"
 
 #define RUN_DRONE 0
 #define TEST_MOTORS_SERIAL 1
 #define TEST_MOTORS_PROXIMITY_SENSOR 2
 #define CALIBRATE 3
+#define SHOW_CALIBRATION_VALUES 4
 
-#define RUNNING_PROGRAM 2
+#define RUNNING_PROGRAM 0
 
 Motors* motors;
 Gyro* g;
@@ -118,6 +120,10 @@ void loop() {
       break;
     case CALIBRATE:
       calibrate();
+      break;
+    case SHOW_CALIBRATION_VALUES:
+      showCalibrationValues();
+      delay(999999999);
       break;
   }
   lastTime = currentTime;

@@ -8,14 +8,13 @@
 #define GETTING_BACK_TO_PLACE 1
 #define STATE_LED 13
 
-#define POS_DIFF_INTENSITY 2
-#define VEL_DIFF_INTENSITY 18
-#define BIAS_CORRECTION_INTENSITY 0.06
-#define HOVER_BASIS_INTENSITY 40
-
+#define POS_DIFF_INTENSITY 0.7
+#define VEL_DIFF_INTENSITY 1.8
+#define BIAS_CORRECTION_INTENSITY 0.05
 
 typedef struct {
   bool is_on = false;
+  float throttle = 0;
 
   float frontIntensity;
   float rearIntensity;
@@ -61,7 +60,10 @@ class OnState : public State {
     OnState() : State() {}
     void run(DronePosition *d, float dt);
   private:
-    float turningOffTime = 0;
+    float 
+      turningOffTime = 0,
+      emergencyQuitTime = 0,
+      takingOffTime = 0;
 };
 
 // STATE MACHINE ---------------------------------

@@ -20,9 +20,9 @@ void Gyro::readRawValues() {
   Wire.endTransmission(false);
   Wire.requestFrom(MPU,14,true);
   
-  rawAX = double(Wire.read()<<8|Wire.read()) / 16384.0; // accX
-  rawAY = double(Wire.read()<<8|Wire.read()) / 16384.0; // accY
-  rawAZ = double(Wire.read()<<8|Wire.read()) / 16384.0; // accZ
+  rawAX = -double(Wire.read()<<8|Wire.read()) / 16384.0; // accX
+  rawAY = -double(Wire.read()<<8|Wire.read()) / 16384.0; // accY
+  rawAZ = -double(Wire.read()<<8|Wire.read()) / 16384.0; // accZ
   tmp = double(Wire.read()<<8|Wire.read()); // tmp
   rawGX = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroX
   rawGY = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroY
@@ -53,7 +53,7 @@ bool Gyro::calibrate() {
     gErrorX += rawGX;
     gErrorY += rawGY;
     gErrorZ += rawGZ;
-    Serial.println(currentRound);
+    // Serial.println(currentRound);
     this->currentRound ++;
     return false;
   } else {
@@ -72,8 +72,6 @@ bool Gyro::calibrate() {
 
 void Gyro::readCalibration() {
   loadCalibration(&gErrorX, &gErrorY, &gErrorZ, &aErrorX, &aErrorY);
-  // Serial.println(String(gErrorX) + " " + String(gErrorY) + " " + String(gErrorZ) + " " + String(aErrorX) + " " + String(aErrorY));
-  // delay(999999);
 }
 
 void Gyro::setAngle(float dt) {
@@ -84,8 +82,10 @@ void Gyro::setAngle(float dt) {
     = (atan(-1 * aX / sqrt(sq(aY) + sq(aZ)))) * RAD_TO_DEG;
   float aAngleZ = (atan2(aY, aZ)) * RAD_TO_DEG;
 
-  float nGPosX = 0.98 * (gPosX + gX * dt) - 0.02 * aAngleX;
-  float nGPosY = 0.98 * (gPosY + gY * dt) - 0.02 * aAngleY;
+  float nGPosX = 0.98 * (gPosX + gX * dt) + 0.02 * aAngleX;
+  float nGPosY = 0.98 * (gPosY + gY * dt) + 0.02 * aAngleY;
+
+  // Serial.println(String(nGPosX) + " " + String(nGPosY));
 
   angularVelX = nGPosX - gPosX;
   angularVelY = nGPosY - gPosY;
