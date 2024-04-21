@@ -7,22 +7,19 @@
 #include "storage.h"
 
 #define RUN_DRONE 0
-#define TEST_MOTORS_SERIAL 1
-#define TEST_MOTORS_PROXIMITY_SENSOR 2
 #define CALIBRATE 3
 #define SHOW_CALIBRATION_VALUES 4
 
 #define RUNNING_PROGRAM 0
-
 Motors* motors;
 Gyro* g;
 StateMachine* sm;
-ProximitySensor *ps1;
 bool calibrating = true;
 int read = 0;
 float currentTime, lastTime = 0;
 bool printCalibrate = true;
 DronePosition d;
+uint32_t loopTimer;
 
 void testMotorsPrint() {
   if (Serial.available() > 0) {
@@ -31,16 +28,11 @@ void testMotorsPrint() {
   }
 }
 
-void testMotorsProximitySensor(float dt) {
-    float distance = ps1->getLowPassFilteredDistance(dt)[0];
-    float intensity = constrain(map(distance, 20, 45, 0, 100), 0, 100);
-    Serial.println(String(distance) + " " + String(intensity));
-    motors->writeAll(intensity);
-}
-
 void runDrone(float dt) {
   g->updateData(dt);
   sm->run(dt);
+  while (micros() - loopTimer < 4000);
+  loopTimer=micros();
 }
 
 void calibrate() {
@@ -62,46 +54,35 @@ void setup() {
   pinMode(9, OUTPUT);
   pinMode(13, OUTPUT);
 
-  digitalWrite(8, LOW);
+  digitalWrite(9, HIGH);
 
   motors = MotorsSingleton::getInstance();
   g = GyroSingleton::getGyro();
-  ps1 = ProximitySensorSingleton::getProximitySensor();
   if (RUNNING_PROGRAM == RUN_DRONE) {
     sm = new StateMachine(&d);
+
+    motors->writeAll(180);
+    delay(5000);
+    
+    motors->writeAll(0);
+    delay(10000);
+
+    // motors->writeFR(20);
+    // delay(2000);
+
+    // motors->writeFL(20);
+    // delay(2000);
+
+    // motors->writeRR(20);
+    // delay(2000);
+
+    // motors->writeRL(20);
+    // delay(2000);
+
+    // motors->writeAll(0);
+    // delay(999999);
   }
-
-  // UNCONMMENT THIS TO RUN ESC CALIBRATION PROGRAN
-  // motors->writeAll(180);
-  // delay(10000);
-  
-  // motors->writeAll(0);
-  // delay(10000);
-  
-  // motors->writeFL(20);
-  // delay(2000);
-  // motors->writeFL(0);
-  // delay(2000);
-
-  // motors->writeFR(20);
-  // delay(2000);
-  // motors->writeFR(0);
-  // delay(2000);
-
-  // motors->writeRL(20);
-  // delay(2000);
-  // motors->writeRL(0);
-  // delay(2000);
-
-  // motors->writeRR(20);
-  // delay(2000);
-  // motors->writeRR(0);
-  
-  // delay(999999);
-  // END IF THE MOTOR CALIBRATION PROGRAM
-
-  motors->writeAll(0);
-  delay(2000);
+  loopTimer = micros();
 }
 
 void loop() {
@@ -111,12 +92,6 @@ void loop() {
   switch (RUNNING_PROGRAM) {
     case RUN_DRONE:
       runDrone(dt);
-      break;
-    case TEST_MOTORS_SERIAL:
-      // testMotorsPrint();
-      break;
-    case TEST_MOTORS_PROXIMITY_SENSOR:
-      testMotorsProximitySensor(dt);
       break;
     case CALIBRATE:
       calibrate();

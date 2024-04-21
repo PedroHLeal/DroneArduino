@@ -7,6 +7,9 @@ const int MPU=0x68;
 
 Gyro::Gyro(bool shouldCalibrate = false) {
   Wire.begin();
+  Wire.setClock(400000);
+  Wire.begin();
+  delay(250);
   Wire.beginTransmission(MPU);
   Wire.write(0x6B);  
   Wire.write(0);    
@@ -15,14 +18,22 @@ Gyro::Gyro(bool shouldCalibrate = false) {
 }
 
 void Gyro::readRawValues() {
+  Wire.beginTransmission(0x68);
+  Wire.write(0x1A);
+  Wire.write(0x05);
+  Wire.endTransmission();
+  Wire.beginTransmission(0x68);
+  Wire.write(0x1C);
+  Wire.write(0x10);
+  Wire.endTransmission();
   Wire.beginTransmission(MPU);
   Wire.write(0x3B);  
   Wire.endTransmission(false);
   Wire.requestFrom(MPU,14,true);
   
-  rawAX = -double(Wire.read()<<8|Wire.read()) / 16384.0; // accX
-  rawAY = -double(Wire.read()<<8|Wire.read()) / 16384.0; // accY
-  rawAZ = -double(Wire.read()<<8|Wire.read()) / 16384.0; // accZ
+  rawAX = double(Wire.read()<<8|Wire.read()) / 16384.0; // accX
+  rawAY = double(Wire.read()<<8|Wire.read()) / 16384.0; // accY
+  rawAZ = double(Wire.read()<<8|Wire.read()) / 16384.0; // accZ
   tmp = double(Wire.read()<<8|Wire.read()); // tmp
   rawGX = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroX
   rawGY = double(Wire.read()<<8|Wire.read()) / 131.0; // gyroY
@@ -53,7 +64,7 @@ bool Gyro::calibrate() {
     gErrorX += rawGX;
     gErrorY += rawGY;
     gErrorZ += rawGZ;
-    // Serial.println(currentRound);
+
     this->currentRound ++;
     return false;
   } else {
@@ -82,19 +93,11 @@ void Gyro::setAngle(float dt) {
     = (atan(-1 * aX / sqrt(sq(aY) + sq(aZ)))) * RAD_TO_DEG;
   float aAngleZ = (atan2(aY, aZ)) * RAD_TO_DEG;
 
-  float nGPosX = 0.98 * (gPosX + gX * dt) + 0.02 * aAngleX;
-  float nGPosY = 0.98 * (gPosY + gY * dt) + 0.02 * aAngleY;
+  gPosX = 0.98 * (gPosX + gX * dt) + 0.02 * aAngleX;
+  gPosY = 0.98 * (gPosY + gY * dt) + 0.02 * aAngleY;
+  gPosZ += gZ * dt;
 
-  // Serial.println(String(nGPosX) + " " + String(nGPosY));
-
-  angularVelX = nGPosX - gPosX;
-  angularVelY = nGPosY - gPosY;
-
-  gPosX = nGPosX; 
-  gPosY = nGPosY; 
-  gPosZ = 0.98 * (gPosZ + gZ * dt) - 0.02 * aAngleZ;
-
-  gpX += gX * dt; 
-  gpY += gY * dt; 
-  gpZ += gZ * dt;
+  // Serial.println(String(aX) + " " + String(aY));
+  // Serial.println(String(aAngleX) + " " + String(aAngleY));
+  // Serial.println(String(gPosX) + " " + String(gPosY));
 }

@@ -12,8 +12,7 @@ class Gyro {
       aX = 0, aY = 0, aZ = 0,
       gX = 0, gY = 0, gZ = 0,
       gPosX = 0, gPosY = 0, gPosZ = 0,
-      gpX = 0, gpY = 0, gpZ = 0,
-      angularVelX = 0, angularVelY = 0;
+      posX = 0, posY = 0;
   private:
     int calibrationRounds = 3000, currentRound = 0;
     int samplesToIgnore = 3000, ignoredSamples = 0;

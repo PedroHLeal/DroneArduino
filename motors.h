@@ -1,4 +1,4 @@
-#include <Servo.h>
+#include <ServoTimer2.h>
 
 #ifndef MOTORS
 #define MOTORS
@@ -14,7 +14,7 @@
 
 class Motors {
   private:
-    Servo motor_fl, motor_fr, motor_rl, motor_rr;
+    ServoTimer2 motor_fl, motor_fr, motor_rl, motor_rr;
   public:
     Motors();
     void writeLeft(int intensity);
