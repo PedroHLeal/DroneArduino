@@ -10,5 +10,5 @@ I've also attached a bluetooth module to control it from cellphone.
 For the Android BT app, go to https://github.com/PedroHLeal/AndroidArduinoRemoteController
 
 Next steps: 
-- I'm getting rid of the Arduino as a FC and replace it for a proper BETAFLIGHT one, this should improve the awful wiring a lot and i'll be attaching some proximity and other sensors to the arduino, so i can make some cool stabilization features to the drone (like height and position)
-- Also, in a further future, i'll maybe replace the arduino for a PI and a camera, and experiment with some CV to try to create some neat navigational feats to the drone.
+- I'm getting rid of the Arduino as a FC and replace it for a proper BETAFLIGHT one, this should improve the awful wiring a lot. Also, i'll be attaching some proximity and other sensors to the arduino, so i can make some stabilization features to the drone (like keeping height and position)
+- Also, in a further future, i'll maybe replace the arduino for a PI and a camera, and experiment with some CV to try to make it more autonomous.
