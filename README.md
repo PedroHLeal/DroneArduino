@@ -1,7 +1,5 @@
 ## ARDUINO FLIGHT CONTROLLER
 
-![dronatellogif](https://github.com/PedroHLeal/DroneArduino/assets/5844621/92295875-5e58-4f1e-9142-fa274aa36034)
-
 This is a POC (as if this wasn't proved a thousand times already; let's call it proof of myself then) to make a usable FC on arduino.
 
 This project only uses a MPU6050 gyro to stabilize itself, which makes the thing very hard to control, specially it's height (which is throttle based only).
